@@ -9,6 +9,13 @@ source(file.path("R", "trend.R"))
 source(file.path("R", "time_series.R"))
 source(file.path("R", "data_center.R"))
 
+# Assignment 3: aggregate planning modules (use a separate planning dataset)
+source(file.path("R", "aggregate_data.R"))
+source(file.path("R", "aggregate_heuristic.R"))
+source(file.path("R", "aggregate_lp.R"))
+source(file.path("R", "aggregate_transport.R"))
+source(file.path("R", "aggregate_disaggregation.R"))
+
 # Initial shared dataset
 initial_data <- c(
   120, 126, 123, 132, 138,
@@ -207,7 +214,7 @@ ui <- fluidPage(
     class = "sidebar",
     div(class = "brand", "PRODUCTION"),
     div(class = "brand-subtitle", "PLANNING & ANALYTICS"),
-    div(class = "menu-label", "WORKSPACE"),
+    div(class = "menu-label", "FORECASTING"),
     
     tags$ul(
       class = "nav nav-pills nav-stacked",
@@ -252,6 +259,38 @@ ui <- fluidPage(
         href = "#",
         onclick = "Shiny.setInputValue('active_page','data_center',{priority:'event'}); return false;",
         "Data Center"
+      )),
+
+      # Assignment 3 — separate group in the same sidebar
+      tags$li(tags$div(
+        class = "menu-label",
+        style = "padding-top:22px; padding-bottom:6px;",
+        "AGGREGATE PLANNING"
+      )),
+      tags$li(tags$a(
+        href = "#",
+        onclick = "Shiny.setInputValue('active_page','aggregate_data',{priority:'event'}); return false;",
+        "Aggregate Data Center"
+      )),
+      tags$li(tags$a(
+        href = "#",
+        onclick = "Shiny.setInputValue('active_page','aggregate_heuristic',{priority:'event'}); return false;",
+        "Heuristic Plans"
+      )),
+      tags$li(tags$a(
+        href = "#",
+        onclick = "Shiny.setInputValue('active_page','aggregate_lp',{priority:'event'}); return false;",
+        "Linear Programming"
+      )),
+      tags$li(tags$a(
+        href = "#",
+        onclick = "Shiny.setInputValue('active_page','aggregate_transport',{priority:'event'}); return false;",
+        "Transportation Method"
+      )),
+      tags$li(tags$a(
+        href = "#",
+        onclick = "Shiny.setInputValue('active_page','aggregate_disaggregation',{priority:'event'}); return false;",
+        "Disaggregation"
       ))
     )
   ),
@@ -265,6 +304,8 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   shared_data <- reactiveVal(initial_data)
+  # Assignment 3 data is independent from forecasting observations.
+  shared_aggregate <- reactiveVal(NULL)
   current_page <- reactiveVal("overview")
   
   observeEvent(input$active_page, {
@@ -273,6 +314,7 @@ server <- function(input, output, session) {
   
   # Connect the central data module
   data_center_server("data_center", shared_data)
+  aggregate_data_server("aggregate_data", shared_aggregate)
   
   output$page_content <- renderUI({
     
@@ -284,7 +326,7 @@ server <- function(input, output, session) {
         div(
           class = "page-header",
           div(class = "top-tag", "PRODUCTION ANALYTICS"),
-          h2("Forecasting Workspace"),
+          h2("Forecasting Overview"),
           p(
             class = "page-description",
             "Analyze production patterns, explore forecasting methods, and evaluate prediction accuracy."
@@ -324,6 +366,15 @@ server <- function(input, output, session) {
           class = "content-panel",
           h4("Getting Started"),
           p("Choose a module from the sidebar to begin.")
+        ),
+
+        h3(class = "section-title", "Aggregate Planning"),
+        div(
+          class = "welcome-card",
+          h4("Plan Production, Workforce, and Inventory"),
+          p("Start with Aggregate Data Center to upload period demand and working days. ",
+            "Then compare Heuristic Plans, Linear Programming, Transportation Method, ",
+            "and Disaggregation using the same planning data.")
         )
       )
       
@@ -348,9 +399,29 @@ server <- function(input, output, session) {
       time_series_ui("time_series")
       
     } else if (page == "data_center") {
-      
+
       data_center_ui("data_center")
-      
+
+    } else if (page == "aggregate_data") {
+
+      aggregate_data_ui("aggregate_data")
+
+    } else if (page == "aggregate_heuristic") {
+
+      aggregate_heuristic_ui("aggregate_heuristic")
+
+    } else if (page == "aggregate_lp") {
+
+      aggregate_lp_ui("aggregate_lp")
+
+    } else if (page == "aggregate_transport") {
+
+      aggregate_transport_ui("aggregate_transport")
+
+    } else if (page == "aggregate_disaggregation") {
+
+      aggregate_disaggregation_ui("aggregate_disaggregation")
+
     }
   })
   
@@ -360,6 +431,12 @@ server <- function(input, output, session) {
   stationary_server("stationary", shared_data)
   trend_server("trend", shared_data)
   time_series_server("time_series", shared_data)
+
+  # Assignment 3 methods share the same aggregate-planning inputs.
+  aggregate_heuristic_server("aggregate_heuristic", shared_aggregate)
+  aggregate_lp_server("aggregate_lp", shared_aggregate)
+  aggregate_transport_server("aggregate_transport", shared_aggregate)
+  aggregate_disaggregation_server("aggregate_disaggregation", shared_aggregate)
 }
 
 shinyApp(ui = ui, server = server)
